@@ -1,0 +1,32 @@
+{
+  "device": {
+    "dpi": 1000,
+    "wheelInvert": false,
+    "thumbWheelInvert": false
+  },
+  "gestureThreshold": 50,
+  "keyNavigationApps": [
+    "com.apple.Safari",
+    "com.apple.finder"
+  ],
+  "eventLog": false,
+  "profiles": {
+    "default": {
+      "buttons": {
+        "middle": "middle-click",
+        "back": "back",
+        "forward": "forward"
+      },
+      "gesture": {
+        "click": "mission-control",
+        "up": "mission-control",
+        "down": "app-expose",
+        "left": "ctrl+left",
+        "right": "ctrl+right"
+      },
+      "modeShift": {
+        "click": "smartshift-toggle"
+      }
+    }
+  }
+}
