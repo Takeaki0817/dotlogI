@@ -1,123 +1,108 @@
 <p align="center">
-  <img src="docs/images/icon.png" width="128" alt="dotlogI icon: a dot-matrix mouse with its thumb button lit red">
+  <img src="docs/images/icon.png" width="128" alt="dotlogI のアイコン。ドットで描いたマウスの親指ボタンが赤く光っている">
 </p>
 
 <h1 align="center">dotlogI</h1>
 
 <p align="center">
-  A tiny macOS companion for the <b>Logitech MX Master 3 for Mac</b>.<br>
-  It does what most people use Logi Options+ for, in about <b>4 MB of memory and 0% CPU</b> when idle.
+  <b>Logicool MX Master 3 for Mac</b> のための、macOS 向けの小さなアプリです。<br>
+  Logi Options+ でよく使う機能を、待機中は <b>メモリ約 4 MB、CPU 0%</b> でこなします。
 </p>
 
-![The buttons screen: a dot-matrix drawing of the mouse, the thumb button lit red because it was just pressed, and its five assignments](docs/images/buttons.png)
+<p align="center"><sub>An unofficial, lightweight companion for the Logitech MX Master 3 on macOS. The UI is in Japanese.</sub></p>
 
-> **Unofficial.** dotlogI is not affiliated with, endorsed by, or supported by Logitech. Logitech, Logi, MX Master
-> and Options+ are trademarks of Logitech. dotlogI contains no Logitech code or artwork.
+![ボタンの画面。ドットで描いたマウスの図で、押したばかりの親指ボタンが赤く光り、右に 5 方向の割り当てが並んでいる](docs/images/buttons.png)
 
-[日本語の説明は下にあります](#日本語)
+> **非公式のアプリです。** dotlogI は Logicool（Logitech）とは関係がなく、同社の承認やサポートも受けていません。
+> Logitech、Logicool、Logi、MX Master、Options+ は Logitech の商標です。dotlogI には、Logitech のコードも画像も入っていません。
 
-## Why
+## なぜ作ったか
 
-Logi Options+ is a large app with several background processes. On the author's Mac, Options+ and its plugin service
-used about 400 MB together, for a handful of button assignments. dotlogI keeps those assignments and drops the rest.
+Logi Options+ は大きなアプリで、裏でいくつもの処理を動かします。作者の Mac では、ボタンをいくつか割り当てるだけのために、Options+ とプラグイン常駐で合わせて約 400 MB のメモリを使っていました。dotlogI は、その割り当てだけを残して、ほかを削っています。
 
 | | Logi Options+ | dotlogI |
 |---|---|---|
-| Memory while idle | about 400 MB (agent and plugin service) | about 4 MB |
-| CPU while idle | about 1.6% (agent, one sample) | 0% |
-| Background processes | 7 | 1 |
-| Account, cloud sync, analytics | yes | none |
+| 待機中のメモリ | 約 400 MB（設定エージェントとプラグイン常駐） | 約 4 MB |
+| 待機中の CPU | 約 1.6%（設定エージェント、1 回の計測） | 0% |
+| 常駐する処理 | 7 | 1 |
+| アカウント、クラウド同期、利用状況の送信 | あり | なし |
 
-## A tour
+## 画面
 
-### Press a button, and the window finds it
+### ボタンを押すと、画面がそのボタンを選ぶ
 
-The window shows a dot-matrix drawing of the mouse. Press any button on the real mouse and the window selects it,
-lit red for a moment, so you never need to know what a button is called. Then choose what it does.
+画面には、マウスをドットで描いた図が出ます。実物のマウスのボタンを押すと、画面でそのボタンが選ばれ、一瞬赤く光ります。ボタンの名前を知らなくても、押すだけで設定したいボタンにたどり着けます。あとは、何をさせるかを選ぶだけです。
 
-The thumb button and the button behind the wheel each have five slots: press, and hold-and-move up, down, left or
-right. Either one can instead zoom while you hold it and move up or down.
+親指ボタンとホイール後ろのボタンには、それぞれ 5 つの割り当てがあります。押すだけ、押したまま上・下・左・右に動かす、の 5 つです。どちらのボタンも、代わりに「押したまま上下に動かしてズーム」にもできます。
 
-### Different apps, different buttons
+### アプリごとに割り当てを変える
 
-![Per-app settings: Safari selected, with red dots on the button-behind-the-wheel entries that differ from the shared setting](docs/images/per-app.png)
+![アプリ別の設定。Safari を選んでいて、共通の設定と違うホイール後ろのボタンの割り当てに赤い点が付いている](docs/images/per-app.png)
 
-Pick an app at the top to give it its own assignments. Entries that differ from **すべてのアプリ** (all apps) get a
-red dot. Everything else is inherited, shown in grey. Use **+** to add an app. The app in front when you press decides
-which assignments apply.
+上でアプリを選ぶと、そのアプリだけの割り当てを作れます。「すべてのアプリ」と違う割り当てには赤い点が付き、変えていない割り当ては共通の設定を引き継いで、灰色で表示されます。アプリは「＋」で足せます。どの割り当てを使うかは、ボタンを押した時に前面にあるアプリで決まります。
 
-### Scrolling and pointer
+### スクロールとポインタ
 
-![The scrolling and pointer screen: pointer resolution 1000 in large dot-matrix digits, and rows for wheel direction, finer wheel steps, the SmartShift threshold, thumb-wheel direction and gesture distance](docs/images/scrolling.png)
+![スクロールとポインタの画面。ポインタの解像度 1000 が大きなドット数字で表示され、ホイールの向き、細かい刻み、SmartShift の閾値、親指ホイールの向き、ジェスチャーの距離が並んでいる](docs/images/scrolling.png)
 
-These settings are written to the mouse itself: pointer resolution (DPI), wheel and thumb-wheel direction, finer
-wheel steps, and how hard a flick switches the wheel from ratchet to free spin (SmartShift). Scrolling stays native.
-dotlogI never sits between the wheel and macOS.
+ここで変えた設定は、マウス本体に書き込みます。ポインタの解像度（DPI）、ホイールと親指ホイールの向き、ホイールの細かい刻み、どれだけ勢いよく回すとラチェットからフリースピンに切り替わるか（SmartShift）を変えられます。スクロールは macOS の標準のままで、dotlogI はホイールの動きを途中で受け取りません。
 
-### Light or dark
+### ライトとダーク
 
-![The buttons screen in light mode: white background with black dots](docs/images/light.png)
+![ライト表示のボタンの画面。白い背景に黒いドット](docs/images/light.png)
 
-The window follows the macOS appearance. Battery level and wheel mode are shown at the top right.
+macOS の外観の設定に合わせて切り替わります。右上には、電池の残りとホイールのモードが出ます。
 
-### First run
+### 初めて開いた時
 
-![First run: a red banner asks to switch dotlogI on under Input Monitoring, with a button that opens System Settings](docs/images/first-run.png)
+![初めて開いた時の画面。「入力監視」で dotlogI をオンにするよう求める赤い案内と、システム設定を開くボタン](docs/images/first-run.png)
 
-When a permission is missing, a banner says which one and opens the right page in System Settings.
+許可が足りない時は、どの許可が足りないかを案内し、システム設定の該当する画面を開けます。
 
-The window is in Japanese for now. Changes apply as soon as you make them; there is no Save button.
+変えた設定は、すぐに反映されます。保存ボタンはありません。
 
-## What it does
+## できること
 
-- Reassign the wheel button, back, forward, the thumb gesture button and the button behind the wheel.
-- Actions: Mission Control, App Exposé, Launchpad, back, forward, middle click, switch the wheel mode, any key
-  chord such as `⇧⌘Z` or `⌃→`, or nothing.
-- Per-app assignments.
-- Pointer resolution, wheel and thumb-wheel direction, finer wheel steps and the SmartShift threshold.
-- Remembers the wheel mode (free spin or ratchet) and restores it when the mouse reconnects.
-- Low-battery notification.
+- ホイールクリック、戻る、進む、親指のジェスチャーボタン、ホイール後ろのボタンの割り当てを変える
+- 割り当てられる操作：Mission Control、App Exposé、Launchpad、戻る、進む、中クリック、ホイールのモードの切り替え、`⇧⌘Z` や `⌃→` のような任意のキーの組み合わせ、何もしない
+- アプリごとの割り当て
+- ポインタの解像度、ホイールと親指ホイールの向き、ホイールの細かい刻み、SmartShift の閾値
+- ホイールのモード（フリースピンかラチェットか）を覚えておき、マウスがつながり直した時に戻す
+- 電池が減った時の通知
 
-Left out on purpose: smooth scrolling, Actions Ring, Flow, macros and Smart Actions, firmware updates, accounts and
-cloud sync, analytics, webcam and keyboard settings.
+あえて入れていないもの：なめらかスクロール、Actions Ring、Flow、マクロと Smart Actions、ファームウェアの更新、アカウントとクラウド同期、利用状況の送信、Webカメラとキーボードの設定。
 
-## How it works
+## 仕組み
 
-The mouse speaks **HID++ 2.0**, the protocol Logitech devices use for configuration. Parts of it are published by
-Logitech, and it is implemented in the Linux kernel and in open-source tools such as Solaar and logiops. The agent:
+MX Master 3 は、設定のやり取りに **HID++ 2.0** という通信の決まりを使っています。Logicool が仕様の一部を公開していて、Linux カーネルや、Solaar、logiops といったオープンソースのツールも同じ決まりでマウスを設定しています。dotlogI の常駐は、次のように動きます。
 
-1. Opens the mouse's HID++ interface (vendor usage page `0xFF43`) through IOKit.
-2. Diverts the buttons (feature `0x1B04`), so presses arrive as HID++ events instead of normal clicks. The wheels stay
-   with the mouse and macOS; dotlogI only sets their direction and resolution (`0x2121`, `0x2150`).
-3. Turns those events into actions with CoreGraphics events. Mission Control, App Exposé and Launchpad use the Dock's
-   `CoreDockSendNotification`, a private but long-standing API.
-4. Re-applies everything whenever the mouse reconnects (feature `0x1D4B`). On exit it hands the buttons back.
+1. IOKit で、マウスの HID++ 用のインターフェース（ベンダー定義の usage page `0xFF43`）を開く
+2. ボタンの入力を、ふつうのクリックの代わりに HID++ のイベントとして受け取るよう、マウスに設定する（feature `0x1B04`）。ホイールはマウスと macOS に任せ、向きと解像度だけを設定する（`0x2121`、`0x2150`）
+3. 受け取ったイベントを、CoreGraphics のイベントで操作に変える。Mission Control、App Exposé、Launchpad は、Dock の `CoreDockSendNotification` で呼び出す（公開されていない API ですが、長く使われています）
+4. マウスがつながり直すたびに、設定をすべて書き込み直す（feature `0x1D4B`）。終了する時は、ボタンをマウス本来の動きに戻す
 
-Once running, the agent only wakes for mouse events. While a permission is missing, it hands the buttons back and
-restarts every 30 seconds to check again, because macOS does not tell a running process that it was granted access.
+動き出した後の常駐は、マウスからイベントが届いた時にだけ働きます。許可が足りない間は、ボタンをマウス本来の動きに戻し、30 秒ごとに起動し直して許可を確かめ直します。macOS は、動いている途中の処理に「許可された」と知らせないためです。
 
-The agent and the settings window are separate programs. The window runs only while it is open, so the resident
-part never loads any UI framework.
+常駐と設定画面は別のプログラムです。設定画面は開いている間だけ動くので、常駐の側は UI のフレームワークを一切読み込みません。
 
-## Requirements
+## 動作環境
 
-- macOS 14 or later to build. It has only been run on macOS 27 on Apple silicon.
-- Swift 5.10 or later (the Xcode Command Line Tools are enough)
-- MX Master 3 for Mac connected over Bluetooth (product ID `0xB023`). Other models and the Bolt/Unifying receiver are
-  untested.
+- ビルドには macOS 14 以降が要ります。実際に動かしたのは、Apple シリコンの macOS 27 だけです
+- Swift 5.10 以降（Xcode の Command Line Tools で足ります）
+- Bluetooth でつないだ MX Master 3 for Mac（product ID `0xB023`）。ほかの機種と、Bolt / Unifying レシーバー経由の接続は試していません
 
-## Status
+## 確かめた範囲
 
-This is a personal tool that works on the author's Mac. What has and hasn't been tried there:
+作者の Mac で使っている個人用のツールです。その Mac で試したものと、まだ試していないものは次のとおりです。
 
-| Tried | Not tried yet |
+| 試した | まだ試していない |
 |---|---|
-| Thumb-button gestures, back/forward, desktop switching, per-app assignments | The `launchpad` action (recent macOS replaced Launchpad with Apps) |
-| DPI, wheel direction and SmartShift threshold, read back from the mouse | The `middle-click` action. A remapped wheel button clicks only; it cannot middle-drag |
-| Granting permissions and the agent picking them up | Restoring the wheel mode after the mouse is switched off and on |
-| Install, update and the settings window | The low-battery notification, and zoom on hold-and-move |
+| 親指ボタンのジェスチャー、戻る・進む、デスクトップの切り替え、アプリごとの割り当て | `launchpad` の操作（最近の macOS では、Launchpad はアプリ一覧に置き換わっています） |
+| DPI、ホイールの向き、SmartShift の閾値（マウスから読み戻して確認） | `middle-click` の操作。割り当て直したホイールボタンはクリックだけで、中ボタンでのドラッグはできません |
+| 許可を出した後に常駐がそれを読み取ること | マウスの電源を入れ直した後の、ホイールのモードの戻し |
+| 導入、更新、設定画面 | 電池が減った時の通知、押したまま動かしてズーム |
 
-## Install
+## 導入
 
 ```sh
 git clone https://github.com/Takeaki0817/dotlogI.git
@@ -125,46 +110,39 @@ cd dotlogI
 scripts/install.sh
 ```
 
-This builds and installs one app, **/Applications/dotlogI.app**, and a login agent that runs it in the background
-(`~/Library/LaunchAgents/local.dotlogi.plist`). Your settings go to `~/.config/dotlogi/config.json` (created once from
-`config/default.json`), and the log to `~/Library/Logs/dotlogi.log`.
+アプリ **/Applications/dotlogI.app** が一つと、それを裏で動かすためのログイン項目（`~/Library/LaunchAgents/local.dotlogi.plist`）が入ります。設定は `~/.config/dotlogi/config.json`（初回だけ `config/default.json` から作ります）に、記録は `~/Library/Logs/dotlogi.log` に書かれます。
 
-Then **open dotlogI**. macOS asks for two permissions. Switch **dotlogI** on in both lists:
+導入したら、次の手順で許可を出します。
 
-1. **Input Monitoring**, to read the mouse's buttons
-2. **Accessibility**, to send key presses and clicks
+1. 「dotlogI」を開く。macOS が 2 つの許可を求めてきます
+2. 「入力監視」で **dotlogI** をオンにする（マウスのボタンを読むため）
+3. 「アクセシビリティ」で **dotlogI** をオンにする（キー操作やクリックを送るため）
+4. dotlogI の画面に戻る
 
-The background copy picks them up when you return to the dotlogI window, or within 30 seconds. Opening dotlogI later
-just shows the settings window.
+画面に戻った時か、遅くとも 30 秒以内に、裏の常駐が許可を読み取ります。2 回目からは、dotlogI を開くと設定画面だけが出ます。
 
-**Turn off Logi Options+ first**, or both apps will try to handle the buttons:
+**先に Logi Options+ を止めてください。** 両方が動いていると、同じボタンに両方が反応します。
 
 ```sh
 launchctl disable gui/$(id -u)/com.logi.cp-dev-mgr
 launchctl bootout gui/$(id -u)/com.logi.cp-dev-mgr
 ```
 
-Also remove *Logi Options+* from System Settings > General > Login Items. To undo, run `launchctl enable` with the
-same label and `launchctl bootstrap gui/$(id -u) /Library/LaunchAgents/com.logi.optionsplus.plist`.
+あわせて、システム設定の「一般」→「ログイン項目」から Logi Options+ を外します。元に戻す時は、同じ名前で `launchctl enable` を実行し、`launchctl bootstrap gui/$(id -u) /Library/LaunchAgents/com.logi.optionsplus.plist` を実行します。
 
-### After an update
+### 更新した後
 
-The app is ad-hoc signed, so macOS ties its permissions to that exact build. After you rebuild, open dotlogI and
-switch it on again in both lists. The installer clears the old entries, so the new one is the only dotlogI listed.
+アプリは ad-hoc 署名なので、macOS は許可をそのビルドに結び付けます。作り直した後は、もう一度 dotlogI を開き、2 つの許可をオンにし直してください。導入スクリプトが古い登録を消すので、一覧に出る dotlogI は新しいものだけです。
 
-To keep the permissions across your own rebuilds instead, install with `DOTLOGI_LOCAL_SIGNING=1 scripts/install.sh`.
-This signs with a local certificate, but then any program running as you could use that certificate to claim
-dotlogI's permissions. Read `scripts/signing.sh` before choosing it.
+作り直しても許可を残したい場合は、`DOTLOGI_LOCAL_SIGNING=1 scripts/install.sh` で導入します。手元で作った証明書で署名する方式ですが、同じユーザーで動くほかのプログラムが、その証明書で dotlogI の許可を手に入れられるようになります。選ぶ前に `scripts/signing.sh` を読んでください。
 
-## Configure by hand
+## 設定ファイルを直接書き換える
 
-The settings window writes `~/.config/dotlogi/config.json`. You can also edit it and reload with
-`launchctl kill SIGHUP gui/$(id -u)/local.dotlogi`.
+設定画面は `~/.config/dotlogi/config.json` を書き換えます。このファイルを直接書き換えた時は、`launchctl kill SIGHUP gui/$(id -u)/local.dotlogi` で読み直させます。
 
-Actions: `mission-control`, `app-expose`, `launchpad`, `back`, `forward`, `middle-click`, `smartshift-toggle`, `none`,
-or a key chord such as `cmd+shift+z`, `ctrl+right` or `ctrl+tab`. Modifiers are `cmd`, `shift`, `ctrl` and `opt`.
+割り当てられる操作は、`mission-control`、`app-expose`、`launchpad`、`back`、`forward`、`middle-click`、`smartshift-toggle`、`none` と、`cmd+shift+z`、`ctrl+right`、`ctrl+tab` のようなキーの組み合わせです。修飾キーは `cmd`、`shift`、`ctrl`、`opt` です。
 
-`profiles.default` applies everywhere. A profile keyed by an app's bundle ID overrides single entries for that app:
+`profiles.default` はすべてのアプリで使われます。アプリの bundle ID を名前にしたプロファイルを追加すると、そのアプリでだけ、書いた項目を上書きします。
 
 ```json
 "com.google.Chrome": {
@@ -172,48 +150,26 @@ or a key chord such as `cmd+shift+z`, `ctrl+right` or `ctrl+tab`. Modifiers are 
 }
 ```
 
-`.build/release/DotlogiAgent check` validates the config without touching the mouse. `.build/release/DotlogiAgent
-probe` prints the mouse's feature table and current state without changing anything.
+`.build/release/DotlogiAgent check` は、マウスに触れずに設定ファイルを点検します。`.build/release/DotlogiAgent probe` は、何も変えずに、マウスが持つ機能の一覧と今の状態を表示します。
 
-## Uninstall
+## アンインストール
 
 ```sh
 scripts/install.sh uninstall
 ```
 
-This stops the agent, hands the buttons back to the mouse, and removes the app, its login agent and its two
-permissions. `~/.config/dotlogi` is kept. If you used local signing, also run `scripts/signing.sh remove`.
+常駐を止めてボタンをマウス本来の動きに戻し、アプリ、ログイン項目、2 つの許可を消します。`~/.config/dotlogi` は残します。証明書の方式で導入していた場合は、`scripts/signing.sh remove` も実行してください。
 
-## Security notes
+## 安全上の注意
 
-- The agent holds Accessibility and Input Monitoring. It is signed with the hardened runtime, so injected libraries
-  and `DYLD_*` variables are refused. Ad-hoc signing ties the permissions to one exact build.
-- **Treat config files as trusted input.** A config cannot run commands, but it can bind a button to any key chord,
-  such as `cmd+q`. Only use configs you have read.
-- The agent accepts one mouse at a time and limits what a device can make it queue or log.
+- 常駐は「アクセシビリティ」と「入力監視」の許可を持ちます。hardened runtime を付けて署名しているので、外からのライブラリの差し込みや `DYLD_*` の環境変数は受け付けません。また、既定の ad-hoc 署名では、許可はそのビルドにだけ結び付きます
+- **設定ファイルは信頼できるものだけを使ってください。** 設定ファイルからコマンドは実行できませんが、`cmd+q` のような任意のキーの組み合わせをボタンに割り当てられます。中身を読んだ設定ファイルだけを使ってください
+- 常駐がつなぐマウスは 1 台だけです。機器から届くデータで、ためこむ量や記録の量が際限なく増えないようにしてあります
 
-## Development
+## 開発
 
-`scripts/screenshots.sh` regenerates the images above from sample settings, never from your own.
-`scripts/make-icon.swift` draws the icon.
+`scripts/screenshots.sh` は、この README の画像を見本の設定から作り直します（自分の設定は使いません）。`scripts/make-icon.swift` はアイコンを描きます。
 
-## License
+## ライセンス
 
-MIT. See [LICENSE](LICENSE).
-
----
-
-## 日本語
-
-dotlogI は、**Logicool MX Master 3 for Mac** を軽く使うための、macOS 向けの小さなアプリです。Logi Options+ でよく使う
-機能（ボタンの割り当て、アプリごとの割り当て、ポインタの速さ、ホイールの向き、SmartShift）だけを残し、常に動く部分は
-約 4 MB のメモリで、待機中は CPU を使いません。Logicool の公式アプリではありません。
-
-**使い方**
-
-1. 上の「Install」のコマンドで導入する
-2. 「dotlogI」を開き、システム設定の「入力監視」と「アクセシビリティ」で dotlogI をオンにする
-3. マウスのボタンを押すと、画面でそのボタンが選ばれるので、割り当てを選ぶ
-
-更新した後は、もう一度 dotlogI を開き、2 つをオンにし直してください。Logi Options+ と同時に使うと、ボタンを取り合います。
-上の「Turn off Logi Options+ first」の手順で、先に止めてください。
+MIT です。[LICENSE](LICENSE) を見てください。
