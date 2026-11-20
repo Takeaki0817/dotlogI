@@ -3,8 +3,9 @@ import Foundation
 import IOKit.hid
 import DotlogiCore
 
-/// Applies the config to the mouse and turns diverted button events into actions.
-/// Everything is event-driven: no timers, no polling.
+/// Applies the config to the mouse and turns diverted button and wheel events into actions.
+/// Everything is event-driven: no polling. The only timers run while a smooth-scroll glide is moving or a
+/// permission is missing.
 final class Controller {
     // Control IDs of the MX Master 3, as listed by the mouse itself (REPROG_CONTROLS_V4, see `probe`).
     static let middle: UInt16 = 0x52, back: UInt16 = 0x53, forward: UInt16 = 0x56
@@ -25,6 +26,11 @@ final class Controller {
     private var configuring = false
     private var needsReconfigure = false
     private var lastBatteryWarning = Date.distantPast
+    private let scroller = SmoothScroller()
+    /// True while the wheel is diverted to this process (smooth scrolling on and allowed to post events).
+    private var smoothScrollOn = false
+    /// Hi-res wheel units per notch, read from the mouse.
+    private var wheelMultiplier = 8.0
     /// The wheel mode (free spin / ratchet) last chosen with the wheel button, put back on every connect
     /// because the mouse may forget it when it powers off.
     private static let wheelModeKey = "WheelMode"
@@ -41,6 +47,8 @@ final class Controller {
         monitor.onRemove = { [weak self] device in
             guard let self, let current = self.device, current.device == device else { return }
             self.log("device removed")
+            self.scroller.stop()
+            self.smoothScrollOn = false
             current.close()
             self.device = nil
             self.status.connected = false
@@ -123,8 +131,24 @@ final class Controller {
                 let flags: UInt8 = Controller.rawXYControls.contains(cid) ? 0x33 : 0x03 // divert (+ raw XY) with valid bits
                 _ = try device.call(.reprogControlsV4, 3, [UInt8(cid >> 8), UInt8(cid & 0xFF), flags, 0, 0])
             }
-            // The wheels stay with the mouse: macOS scrolls natively with no work in this process.
-            _ = try device.call(.hiResWheel, 2, [Controller.nativeWheelMode(config)])
+            scroller.stop()
+            // Take the wheel only when the scroll events can be posted; a diverted wheel without that
+            // permission would not scroll at all. Otherwise macOS scrolls natively with no work here.
+            smoothScrollOn = (config.device.smoothScroll ?? false) && CGPreflightPostEventAccess()
+            if smoothScrollOn {
+                wheelMultiplier = Double(max(try device.call(.hiResWheel, 0)[0], 1))
+                scroller.pixelsPerNotch = 48 * min(max(config.device.smoothScrollSpeed ?? 1, 0.2), 5)
+                scroller.tau = min(max(config.device.smoothScrollDuration ?? 0.15, 0.03), 0.6) / 3
+                scroller.usePhases = config.device.smoothScrollPhases ?? false
+                // Posted events are not flipped by the firmware invert bit, so apply the chosen direction here.
+                scroller.direction = Controller.standardDirection(config) ? 1 : -1
+                scroller.onGlideEnd = { [weak self] px, n, secs in
+                    self?.event(String(format: "glide %dpx in %d events over %.0fms", px, n, secs * 1000))
+                }
+                _ = try device.call(.hiResWheel, 2, [0x03]) // diverted, hi-res
+            } else {
+                _ = try device.call(.hiResWheel, 2, [Controller.nativeWheelMode(config)])
+            }
             _ = try device.call(.thumbWheel, 2, [0x00, (config.device.thumbWheelInvert ?? false) ? 0x01 : 0x00])
             if let dpi = config.device.dpi.map({ min(max($0, 200), 4000) }) {
                 _ = try device.call(.adjustableDPI, 3, [0, UInt8(dpi >> 8), UInt8(dpi & 0xFF)])
@@ -138,7 +162,7 @@ final class Controller {
             }
             smartShiftMode = try device.call(.smartShift, 0)[0]
             batteryLevel = Int(try device.call(.batteryStatus, 0)[0])
-            log("configured: \(try readBack())")
+            log("configured: smooth=\(smoothScrollOn ? 1 : 0) \(try readBack())")
             status.connected = true
             status.deviceName = device.name
             status.lastError = nil
@@ -195,9 +219,19 @@ final class Controller {
         ((config.device.wheelInvert ?? false) ? 0x04 : 0x00) | ((config.device.wheelHiRes ?? false) ? 0x02 : 0x00)
     }
 
-    /// Returns the buttons to the mouse's own behaviour (used on exit).
+    /// Whether the chosen wheel direction is "standard" (wheel away = content up). The setting is stored
+    /// as the firmware invert bit relative to macOS natural scrolling, as the settings window writes it.
+    static func standardDirection(_ config: Config) -> Bool {
+        let macNatural = UserDefaults.standard.persistentDomain(forName: UserDefaults.globalDomain)?["com.apple.swipescrolldirection"] as? Bool ?? true
+        return (config.device.wheelInvert ?? false) == macNatural
+    }
+
+    /// Returns the buttons and the wheel to the mouse's own behaviour (used on exit).
     func restore() {
         guard let device else { return }
+        scroller.stop()
+        smoothScrollOn = false
+        _ = try? device.call(.hiResWheel, 2, [Controller.nativeWheelMode(config)])
         for cid in Controller.divertedControls {
             let flags: UInt8 = Controller.rawXYControls.contains(cid) ? 0x22 : 0x02 // valid bits set, divert/rawXY cleared
             _ = try? device.call(.reprogControlsV4, 3, [UInt8(cid >> 8), UInt8(cid & 0xFF), flags, 0, 0])
@@ -213,6 +247,14 @@ final class Controller {
         switch message.featureIndex {
         case device.cachedIndex(of: .reprogControlsV4):
             if message.function == 0 { buttons(p) } else if message.function == 1 { rawXY(p) }
+        case device.cachedIndex(of: .hiResWheel):
+            // Wheel movement: flags (bit4 hi-res, bits0-3 periods), then signed vertical delta.
+            // Only while smooth scrolling owns the wheel; another program may have diverted it.
+            guard message.function == 0, p.count >= 3, smoothScrollOn else { break }
+            let delta = Double(Int16(bitPattern: UInt16(p[1]) << 8 | UInt16(p[2])))
+            let hiRes = p[0] & 0x10 != 0
+            // One report never stands for more than a few dozen notches, whatever the device claims.
+            scroller.add(notches: min(max(hiRes ? delta / wheelMultiplier : delta, -50), 50))
         case device.cachedIndex(of: .wirelessStatus):
             log("reconnected (status \(p[0]) request \(p[1]))")
             configure()

@@ -361,11 +361,32 @@ private struct ScrollingPane: View {
                         set: { store.config.device.wheelInvert = $0 }
                     ))
                 }
-                row("細かい刻みで送る", "なめらかになる代わりに、速く感じることがあります") {
+                row("なめらかスクロール", "回すたびに、すべるように動きます。回している間だけ少し CPU を使います") {
                     Toggle("", isOn: Binding(
-                        get: { store.config.device.wheelHiRes ?? false },
-                        set: { store.config.device.wheelHiRes = $0 }
+                        get: { store.config.device.smoothScroll ?? false },
+                        set: { store.config.device.smoothScroll = $0 }
                     )).toggleStyle(.switch).labelsHidden()
+                }
+                if store.config.device.smoothScroll ?? false {
+                    row("スクロールの速さ", "1 目盛りで進む距離") {
+                        sliderValue(Binding(
+                            get: { store.config.device.smoothScrollSpeed ?? 1 },
+                            set: { store.config.device.smoothScrollSpeed = ($0 * 10).rounded() / 10 }
+                        ), range: 0.3...3, format: "%.1f")
+                    }
+                    row("止まるまでの長さ", "短いほどきびきび、長いほどゆったり止まります") {
+                        sliderValue(Binding(
+                            get: { store.config.device.smoothScrollDuration ?? 0.15 },
+                            set: { store.config.device.smoothScrollDuration = ($0 * 100).rounded() / 100 }
+                        ), range: 0.05...0.5, format: "%.2f 秒")
+                    }
+                } else {
+                    row("細かい刻みで送る", "なめらかになる代わりに、速く感じることがあります") {
+                        Toggle("", isOn: Binding(
+                            get: { store.config.device.wheelHiRes ?? false },
+                            set: { store.config.device.wheelHiRes = $0 }
+                        )).toggleStyle(.switch).labelsHidden()
+                    }
                 }
                 row("フリースピンに変わる勢い", "ラチェットの時、これより速く回すと自動で空転します") {
                     sliderValue(Binding(

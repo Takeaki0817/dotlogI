@@ -14,6 +14,15 @@ public struct Config: Codable, Equatable {
         public var wheelHiRes: Bool?
         /// Invert the thumb wheel in firmware.
         public var thumbWheelInvert: Bool?
+        /// Smooth scrolling: the agent takes the wheel and animates each notch (costs CPU only while scrolling).
+        /// Engaged only while the agent may post events; otherwise the mouse keeps scrolling natively.
+        public var smoothScroll: Bool?
+        /// Distance per notch, 1.0 = about 48 px.
+        public var smoothScrollSpeed: Double?
+        /// How long one notch glides, in seconds (default 0.15).
+        public var smoothScrollDuration: Double?
+        /// Mark posted events with trackpad-style began/changed/ended phases (default false: no phases).
+        public var smoothScrollPhases: Bool?
         public init() {}
     }
 

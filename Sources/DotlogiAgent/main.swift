@@ -59,6 +59,8 @@ case "check":
     }
     outOfRange("dpi", d.dpi.map(Double.init), 200...4000)
     outOfRange("smartShiftThreshold", d.smartShiftThreshold.map(Double.init), 1...254)
+    outOfRange("smoothScrollSpeed", d.smoothScrollSpeed, 0.2...5)
+    outOfRange("smoothScrollDuration", d.smoothScrollDuration, 0.03...0.6)
     outOfRange("gestureThreshold", Double(config.gestureThreshold), 20...150)
     print("dock actions available: \(SystemActions.isAvailable)  frontmost app: \(FrontmostApp.bundleID() ?? "-")")
     print("permissions: postEvents=\(CGPreflightPostEventAccess()) inputMonitoring=\(IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted)")

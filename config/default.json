@@ -2,7 +2,10 @@
   "device": {
     "dpi": 1000,
     "wheelInvert": false,
-    "thumbWheelInvert": false
+    "thumbWheelInvert": false,
+    "smoothScroll": true,
+    "smoothScrollSpeed": 1.0,
+    "smoothScrollDuration": 0.15
   },
   "gestureThreshold": 50,
   "keyNavigationApps": [
