@@ -27,6 +27,9 @@ final class Controller {
     private var needsReconfigure = false
     private var lastBatteryWarning = Date.distantPast
     private let scroller = SmoothScroller()
+    private let wheelTap = WheelTap()
+    /// True while smooth scrolling has handed the wheel back to the mouse because Control is held.
+    private var wheelWithMouse = false
     /// True while the wheel is diverted to this process (smooth scrolling on and allowed to post events).
     private var smoothScrollOn = false
     /// Hi-res wheel units per notch, read from the mouse.
@@ -48,6 +51,7 @@ final class Controller {
             guard let self, let current = self.device, current.device == device else { return }
             self.log("device removed")
             self.scroller.stop()
+            self.wheelTap.stop()
             self.smoothScrollOn = false
             current.close()
             self.device = nil
@@ -132,9 +136,12 @@ final class Controller {
                 _ = try device.call(.reprogControlsV4, 3, [UInt8(cid >> 8), UInt8(cid & 0xFF), flags, 0, 0])
             }
             scroller.stop()
+            wheelTap.stop()
             // Take the wheel only when the scroll events can be posted; a diverted wheel without that
             // permission would not scroll at all. Otherwise macOS scrolls natively with no work here.
             smoothScrollOn = (config.device.smoothScroll ?? false) && CGPreflightPostEventAccess()
+            var tapOn = false
+            wheelWithMouse = false
             if smoothScrollOn {
                 wheelMultiplier = Double(max(try device.call(.hiResWheel, 0)[0], 1))
                 scroller.pixelsPerNotch = 48 * min(max(config.device.smoothScrollSpeed ?? 1, 0.2), 5)
@@ -145,9 +152,26 @@ final class Controller {
                 scroller.onGlideEnd = { [weak self] px, n, secs in
                     self?.event(String(format: "glide %dpx in %d events over %.0fms", px, n, secs * 1000))
                 }
-                _ = try device.call(.hiResWheel, 2, [0x03]) // diverted, hi-res
+                // Screen zoom ignores posted scroll events, so the real wheel goes back to the mouse while
+                // Control is held (see controlChanged). Without the tap, smooth scrolling still works.
+                tapOn = wheelTap.start(modify: false)
+                if tapOn {
+                    wheelTap.onControl = { [weak self] down in self?.controlChanged(down) }
+                    wheelTap.onWheelWithoutControl = { [weak self] in self?.takeWheelBack() }
+                }
+                wheelWithMouse = tapOn && wheelTap.controlDown
+                let mode: UInt8 = wheelWithMouse ? Controller.zoomWheelMode(config) : 0x03 // 0x03: diverted, hi-res
+                _ = try device.call(.hiResWheel, 2, [mode])
             } else {
-                _ = try device.call(.hiResWheel, 2, [Controller.nativeWheelMode(config)])
+                // Reverse the wheel in the event stream when that works, because the mouse's own invert bit
+                // also reverses Control+scroll screen zoom. Without the tap, fall back to the invert bit.
+                var mode = Controller.nativeWheelMode(config)
+                if (config.device.wheelInvert ?? false) && wheelTap.start(modify: true) {
+                    wheelTap.reverse = true
+                    tapOn = true
+                    mode &= ~0x04
+                }
+                _ = try device.call(.hiResWheel, 2, [mode])
             }
             _ = try device.call(.thumbWheel, 2, [0x00, (config.device.thumbWheelInvert ?? false) ? 0x01 : 0x00])
             if let dpi = config.device.dpi.map({ min(max($0, 200), 4000) }) {
@@ -162,7 +186,7 @@ final class Controller {
             }
             smartShiftMode = try device.call(.smartShift, 0)[0]
             batteryLevel = Int(try device.call(.batteryStatus, 0)[0])
-            log("configured: smooth=\(smoothScrollOn ? 1 : 0) \(try readBack())")
+            log("configured: smooth=\(smoothScrollOn ? 1 : 0) tap=\(tapOn ? 1 : 0) \(try readBack())")
             status.connected = true
             status.deviceName = device.name
             status.lastError = nil
@@ -219,6 +243,31 @@ final class Controller {
         ((config.device.wheelInvert ?? false) ? 0x04 : 0x00) | ((config.device.wheelHiRes ?? false) ? 0x02 : 0x00)
     }
 
+    /// Wheel mode while Control is held during smooth scrolling: not diverted and never inverted, so screen
+    /// zoom sees the real wheel in its own direction.
+    static func zoomWheelMode(_ config: Config) -> UInt8 {
+        nativeWheelMode(config) & ~0x04
+    }
+
+    /// Hands the wheel to the mouse while Control is held, and takes it back for smooth scrolling on release.
+    /// Fire-and-forget (send), because this runs inside the event tap and must not wait for the mouse.
+    private func controlChanged(_ down: Bool) {
+        guard smoothScrollOn, !configuring, let device, down != wheelWithMouse else { return }
+        if down { scroller.stop() }
+        wheelWithMouse = down
+        device.send(.hiResWheel, 2, [down ? Controller.zoomWheelMode(config) : 0x03])
+        event("control \(down ? "down: wheel to the mouse" : "up: wheel to smooth scrolling")")
+    }
+
+    /// The real wheel scrolled with Control up while the mouse had it: a release was missed (screen lock,
+    /// secure input, a paused tap). Take the wheel back so smooth scrolling does not stay off.
+    private func takeWheelBack() {
+        guard smoothScrollOn, wheelWithMouse, !configuring, let device else { return }
+        wheelWithMouse = false
+        device.send(.hiResWheel, 2, [0x03])
+        event("wheel scrolled without control: wheel back to smooth scrolling")
+    }
+
     /// Whether the chosen wheel direction is "standard" (wheel away = content up). The setting is stored
     /// as the firmware invert bit relative to macOS natural scrolling, as the settings window writes it.
     static func standardDirection(_ config: Config) -> Bool {
@@ -230,7 +279,9 @@ final class Controller {
     func restore() {
         guard let device else { return }
         scroller.stop()
+        wheelTap.stop()
         smoothScrollOn = false
+        // The invert bit goes back on, so the chosen direction holds while dotlogI is not running.
         _ = try? device.call(.hiResWheel, 2, [Controller.nativeWheelMode(config)])
         for cid in Controller.divertedControls {
             let flags: UInt8 = Controller.rawXYControls.contains(cid) ? 0x22 : 0x02 // valid bits set, divert/rawXY cleared

@@ -8,7 +8,9 @@ public struct Config: Codable, Equatable {
         public var dpi: Int?
         /// SmartShift auto-disengage threshold, 1-254.
         public var smartShiftThreshold: Int?
-        /// Invert the main wheel in firmware (true = "standard" direction while macOS natural scrolling is on).
+        /// Invert the main wheel (true = "standard" direction while macOS natural scrolling is on). Applied in the
+        /// event stream while the agent runs, so Control+scroll zoom keeps the wheel's own direction; written to
+        /// the firmware only when that is not possible and when the agent exits.
         public var wheelInvert: Bool?
         /// High-resolution wheel reports (finer steps if macOS honours them; off = classic notches).
         public var wheelHiRes: Bool?
@@ -16,6 +18,7 @@ public struct Config: Codable, Equatable {
         public var thumbWheelInvert: Bool?
         /// Smooth scrolling: the agent takes the wheel and animates each notch (costs CPU only while scrolling).
         /// Engaged only while the agent may post events; otherwise the mouse keeps scrolling natively.
+        /// While Control is held the wheel goes back to the mouse, so Control+scroll screen zoom still works.
         public var smoothScroll: Bool?
         /// Distance per notch, 1.0 = about 48 px.
         public var smoothScrollSpeed: Double?
