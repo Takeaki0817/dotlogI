@@ -5,6 +5,7 @@ import SwiftUI
 // Renders the window off screen to a PNG, without showing anything or taking focus:
 //   DotlogiSettings --snapshot out.png [--pane buttons|scrolling] [--appearance dark|light] [--slot gesture]
 //                   [--profile <bundle id>] [--press <slot>] [--config sample.json] [--status sample.json] [--scale 2]
+//                   [--secure-input <app name>]
 // With --config/--status the window shows that sample instead of your own settings (nothing is saved).
 let args = CommandLine.arguments
 func option(_ name: String) -> String? {
@@ -37,7 +38,7 @@ if let output = option("--snapshot") {
             status.pid = getpid() // shown as running
             preview = (config, status)
         }
-        let store = Store(preview: preview)
+        let store = Store(preview: preview, secureInputApp: option("--secure-input"))
         if let pane = option("--pane").flatMap({ name in Pane.allCases.first { "\($0)" == name } }) { store.pane = pane }
         if let slot = option("--slot").flatMap(Slot.init(rawValue:)) { store.slot = slot }
         if let profile = option("--profile") { store.profile = profile }

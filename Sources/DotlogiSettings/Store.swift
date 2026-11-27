@@ -62,20 +62,28 @@ final class Store: ObservableObject {
     @Published private(set) var lit: Slot?
     @Published private(set) var savedAt: Date?
     @Published private(set) var loadError: String?
+    /// True from a press of 再接続 until the resident process reports the mouse connected (or 10 seconds pass).
+    @Published private(set) var reconnecting = false
+    /// The app holding Secure Input when the window last looked (previews: a fixed name or nil).
+    @Published private(set) var secureInputApp: String?
 
     private var saveWork: DispatchWorkItem?
     private var lastAgentRestart = Date.distantPast
     private var litWork: DispatchWorkItem?
+    private var reconnectWork: DispatchWorkItem?
+    /// The resident process that was running when 再接続 was pressed.
+    private var reconnectFromPid: Int32?
     private var tokens: [Int32] = []
 
     /// A preview store never reads or writes the real files (used for README screenshots).
     private let isPreview: Bool
 
-    init(preview: (config: Config, status: Status)? = nil) {
+    init(preview: (config: Config, status: Status)? = nil, secureInputApp: String? = nil) {
         isPreview = preview != nil
         if let preview {
             config = preview.config
             status = preview.status
+            self.secureInputApp = secureInputApp
             return
         }
         do {
@@ -85,6 +93,7 @@ final class Store: ObservableObject {
             loadError = "設定ファイルを読めません（\(Config.path.path)）"
         }
         status = Status.read()
+        refreshSecureInput()
         listen()
         // Coming back from System Settings: if the agent still lacks a permission, restart it now so it reads
         // the new state (it would otherwise restart itself within 30 seconds). At most once every 20 seconds.
@@ -191,12 +200,55 @@ final class Store: ObservableObject {
         try? process.run()
     }
 
+    /// Restarts the resident process, which opens the mouse afresh and writes every setting again.
+    /// Used when the mouse is missing or could not be set up.
+    func reconnect() {
+        guard !reconnecting else { return }
+        reconnecting = true
+        reconnectFromPid = status?.pid
+        lastAgentRestart = Date() // the didBecomeActive path must not restart it a second time
+        startAgent(restart: true)
+        reconnectWork?.cancel()
+        let work = DispatchWorkItem { [weak self] in self?.reconnecting = false }
+        reconnectWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: work)
+    }
+
+    /// While another app has Secure Input on, macOS can refuse writes to the mouse (it also reports itself as a
+    /// keyboard). Read who holds it, so a failed setup can name the app. Costs one registry read, never polled.
+    private func refreshSecureInput() {
+        guard !isPreview else { return }
+        secureInputApp = Store.secureInputHolder()
+    }
+
+    static func secureInputHolder() -> String? {
+        let root = IORegistryGetRootEntry(kIOMainPortDefault)
+        defer { IOObjectRelease(root) }
+        guard let users = IORegistryEntryCreateCFProperty(root, "IOConsoleUsers" as CFString, kCFAllocatorDefault, 0)?
+            .takeRetainedValue() as? [[String: Any]] else { return nil }
+        for user in users {
+            guard let pid = user["kCGSSessionSecureInputPID"] as? Int, pid > 0 else { continue }
+            // The system names the app responsible for the process (e.g. the browser, not its helper).
+            return NSRunningApplication(processIdentifier: pid_t(pid))?.localizedName
+        }
+        return nil
+    }
+
     // MARK: Signals from the resident process
 
     private func listen() {
         var token: Int32 = 0
         notify_register_dispatch(Signal.status, &token, .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.status = Status.read() }
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.status = Status.read()
+                // Done when the mouse is set up, or when a restarted agent reports that it still is not.
+                if self.status?.connected == true || (self.status?.lastError != nil && self.status?.pid != self.reconnectFromPid) {
+                    self.reconnecting = false
+                    self.reconnectWork?.cancel()
+                }
+                self.refreshSecureInput()
+            }
         }
         tokens.append(token)
         for slot in Slot.allCases {

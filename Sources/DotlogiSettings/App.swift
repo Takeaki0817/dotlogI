@@ -141,8 +141,13 @@ private struct Notices: View {
             } else if let status = store.status, !status.accessibility {
                 notice("キー操作を送るには、「アクセシビリティ」で dotlogI をオンにしてください。",
                        action: ("設定を開く", { open("Privacy_Accessibility") }))
+            } else if store.reconnecting {
+                // Ranked above the stopped-agent notice, which would otherwise flash while the agent restarts.
+                notice("マウスにつなぎ直しています…", action: nil)
             } else if !store.agentRunning {
                 notice("常駐が止まっているため、ボタンの割り当てが効いていません。", action: ("起動する", { store.startAgent() }))
+            } else if let status = store.status, !status.connected {
+                notice(disconnectedText(status), action: ("再接続", { store.reconnect() }))
             }
         }
     }
@@ -162,6 +167,17 @@ private struct Notices: View {
         }
         .padding(.horizontal, 24).padding(.vertical, 10)
         .overlay(alignment: .top) { Rectangle().fill(palette.line).frame(height: 1) }
+    }
+
+    /// Why the mouse is not set up, and what to try when 再接続 does not help.
+    private func disconnectedText(_ status: Status) -> String {
+        guard status.lastError != nil else {
+            return "マウスとつながっていないため、ボタンの割り当てが効いていません。電源が入っているか確かめてください。"
+        }
+        if let app = store.secureInputApp {
+            return "\(app) がキー入力を保護しているため、マウスに設定を書き込めません。\(app) を終了してから再接続してください。"
+        }
+        return "マウスに設定を書き込めません。再接続しても直らない時は、Mac を再起動してください。"
     }
 
     /// Opens the privacy list. dotlogI asked for the permission when it was opened, so it is already listed;

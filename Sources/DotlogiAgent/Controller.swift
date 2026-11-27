@@ -192,6 +192,9 @@ final class Controller {
             status.lastError = nil
         } catch {
             log("configure failed: \(error)")
+            // The mouse is attached but not set up, so the buttons do nothing: show it as not connected,
+            // which lets the settings window offer to reconnect.
+            status.connected = false
             status.lastError = "\(error)"
         }
         publish()
